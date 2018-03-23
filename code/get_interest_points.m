@@ -18,7 +18,7 @@
 %   orientation of each interest point. These are OPTIONAL. By default you
 %   do not need to make scale and orientation invariant local features.
 function [x, y, confidence, scale, orientation] = get_interest_points(image, feature_width)
-   
+
 % Implement the Harris corner detector (See Szeliski 4.1.1) to start with.
 % You can create additional interest point detector functions (e.g. MSER)
 % for extra credit.
@@ -37,8 +37,50 @@ function [x, y, confidence, scale, orientation] = get_interest_points(image, fea
 % could use this to ensure that every interest point is at a local maximum
 % of cornerness.
 
-% Placeholder that you can delete. 20 random points
-x = ceil(rand(20,1) * size(image,2));
-y = ceil(rand(20,1) * size(image,1));
+% % Placeholder that you can delete. 20 random points
+% x = ceil(rand(20,1) * size(image,2));
+% y = ceil(rand(20,1) * size(image,1));
+alpha = 0.5;
+[dx, dy] = meshgrid(-1:1, -1:1);
+
+size = feature_width * 4 + 1
+thresh = 0.0075;
+
+Ix = conv2(image, dx, 'same');
+Iy = conv2(image, dy, 'same');
+
+Ix2 = Ix .* Ix;
+Iy2 = Iy .* Iy;
+IxIy = Ix .* Iy;
+
+sigma = 2;
+gIx = imgaussfilt(Ix, sigma);
+imshow(gIx + 0.5)
+gIy = imgaussfilt(Iy, sigma);
+imshow(gIy + 0.5)
+gIx2 = imgaussfilt(Ix2, sigma);
+imshow(gIx2 + 0.5)
+gIy2 = imgaussfilt(Iy2, sigma);
+imshow(gIy2 + 0.5)
+gIxIy = imgaussfilt(IxIy, sigma);
+imshow(gIxIy + 0.5)
+gIxIy2 = gIxIy .* gIxIy;
+imshow(gIxIy2 + 0.5)
+
+inParens = gIx .* gIx + gIy .* gIy;
+har = gIx2 .* gIy2 - gIxIy2 - alpha * (inParens .* inParens);
+imshow(har + 0.5)
+
+for i=0:feature_width-1
+  har(:,1+i) = 0;
+  har(1+i,:) = 0;
+
+  har(end-i, :) = 0;
+  har(:, end-i) = 0;
+end
+
+mat = ordfilt2(har, size .* size, ones(size));
+
+[y, x] = find((har == mat) & (har > thresh));
 
 end

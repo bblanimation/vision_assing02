@@ -18,7 +18,7 @@
 %   standard SIFT)
 
 function [features] = get_features(image, x, y, feature_width)
- 
+
 % To start with, you might want to simply use normalized patches as your
 % local feature. This is very simple to code and works OK. However, to get
 % full credit you will need to implement the more effective SIFT descriptor
@@ -53,8 +53,29 @@ function [features] = get_features(image, x, y, feature_width)
 % feature vector to some power that is less than one.
 
 % Placeholder that you can delete. Empty features.
-features = zeros(size(x,1), 128);
+half_FW = feature_width / 2;
+num_features = size(x,1);
 
+features = zeros(size(x,1), half_FW * half_FW * 8);
 
+Ix = conv2(image, [-1 1], 'same');
+Iy = conv2(image, [-1 1]', 'same');
+theta = atan2(Iy, Ix);
+theta = mod(round((theta(:,:) * 8) / (2 * pi)), 8) + 1;
+
+for i=1:num_features
+  feature = zeros(half_FW, half_FW, 8);
+  if (x(i) > 1 + half_FW) && (x(i) < size(image, 1) - half_FW) && (y(i) > 1 + half_FW) && (y(i) < size(image,2) - half_FW)
+    for x0=-half_FW:half_FW-1
+      for y0=-half_FW:half_FW-1
+        cx = floor(x0 / 2) + (half_FW/2) + 1;
+        cy = floor(y0 / 2) + (half_FW/2) + 1;
+        o = theta(x0 + x(i), y0 + y(i));
+        feature(cy, cx, o) = feature(cy, cx, o) + 1;
+      end
+    end
+  end
+  features(i,:) = reshape(feature, half_FW * half_FW * 8, 1);
+end
 
 end
